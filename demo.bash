@@ -170,22 +170,28 @@ __complete_meta ()
     fi
 }
 
-__demo_comp_add()
+__demo_complete_add()
 {
+    # ---- prolog start
     local command_signature=$1
     local command_index=$2
     local cur words cword prev
     _get_comp_words_by_ref -n =: cur words cword prev
+    ((command_index++))
+    # ---- prolog end
+
     COMPREPLY=($(compgen -d /etc/ -- $cur))
 }
 
-__demo_comp_commit()
+__demo_complete_commit()
 {
+    # ---- prolog start
     local cur words cword prev
     _get_comp_words_by_ref -n =: cur words cword prev
     local command_signature=$1
     local command_index=$2
     ((command_index++))
+    # --- prolog end
 
 
     # Command definitions
@@ -232,21 +238,20 @@ __demo_comp_commit()
         ((command_index++))
     done
 
-
-
-
+    # fallback completion
     __mycomp "commit-value commit-value2"
 }
 
 __demo_complete_app ()
 {
+    # --- prolog start
     local cur words cword prev
     _get_comp_words_by_ref -n =: cur words cword prev
-
     local command_signature=$1
     local command_index=$2
-
     ((command_index++))
+    # --- prolog end
+
 
     # Output application command alias mapping 
     # aliases[ alias ] = command
@@ -268,6 +273,10 @@ __demo_complete_app ()
     options_require_value=(["--log-dir"]="__complete_directory")
     local argument_min_length=0
 
+
+
+    # Start parsing from command_index
+    # ==================================
     # Get the command name chain of the current input, e.g.
     # 
     #     app asset install [arg1] [arg2] [arg3]
@@ -315,7 +324,10 @@ __demo_complete_app ()
         ((command_index++))
     done
 
-    # If the first command name is not found, we do complete...
+    # If the first command name is not found, we do complete: 
+    #    1. options. 
+    #    2. arguments 
+    #    3. subcommand, options or arguments
     if [[ -z "$command" ]] ; then
         case "$cur" in
             # If the current argument $cur looks like an option, then we should complete
@@ -356,14 +368,13 @@ __demo_complete_app ()
         if [[ -n "${subcommand_alias[$command]}" ]] ; then
             command="${subcommand_alias[$command]}"
         fi
-        local completion_func="__demo_comp_${command//-/_}"
+        local completion_func="__demo_complete_${command//-/_}"
 
         # declare the completion function name and dispatch rest arguments to the complete function
         command_signature="${command_signature}.${command}"
         declare -f $completion_func >/dev/null && $completion_func $command_signature $command_index && return
     fi
 }
-
 __demo_main_wrapper ()
 {
     __demo_complete_app "app" 0
