@@ -170,15 +170,13 @@ __complete_meta ()
     fi
 }
 
-
-
-
 __demo_comp_add()
 {
     local command_signature=$1
     local command_index=$2
-    __mycomp "complete-for-add-$command_index"
-    # COMPREPLY=( $(compgen -d /etc/) )
+    local cur words cword prev
+    _get_comp_words_by_ref -n =: cur words cword prev
+    COMPREPLY=($(compgen -d /etc/ -- $cur))
 }
 
 __demo_comp_commit()
@@ -187,9 +185,10 @@ __demo_comp_commit()
     _get_comp_words_by_ref -n =: cur words cword prev
     local command_signature=$1
     local command_index=$2
-#     echo "c: [$c]"
-#     echo "prev: [$prev]"
-#     echo "cur: [$cur]"
+    ((command_index++))
+
+
+    # Command definitions
     declare -A subcommand_alias
     subcommand_alias=(["f"]="foo" ["b"]="bar")
 
@@ -246,6 +245,8 @@ __demo_complete_app ()
 
     local command_signature=$1
     local command_index=$2
+
+    ((command_index++))
 
     # Output application command alias mapping 
     # aliases[ alias ] = command
@@ -331,13 +332,22 @@ __demo_complete_app ()
                 else
                     # If the command requires at least $argument_min_length to run, we check the argument
                     if [[ $argument_min_length > 0 ]] ; then
-                        __complete_meta "app.commit" "opt" "c" "valid-values"
+                        case $argument_index in
+                            0)
+                                __mycomp "a b c"
+                                return
+                                ;;
+                            1)
+                                __mycomp "1 2 3"
+                                return
+                                ;;
+                        esac
                     else
                         # If there is no argument support, then user is supposed to give a subcommand name or an option
                         __mycomp "${!options[*]} ${!subcommands[*]} ${!subcommand_alias[*]}"
+                        return
                     fi
                 fi
-                return
             ;;
         esac
     else
@@ -356,6 +366,6 @@ __demo_complete_app ()
 
 __demo_main_wrapper ()
 {
-    __demo_complete_app "app" 1
+    __demo_complete_app "app" 0
 }
 complete -o bashdefault -o default -o nospace -F __demo_main_wrapper demo 2>/dev/null
